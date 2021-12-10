@@ -1,0 +1,85 @@
+syntax = "proto3";
+package article;
+option go_package = "rpc/article/pb;article_service";
+
+message ArticleInfo {
+  int64 article_id = 1;
+  int64 uid = 2;
+  string content = 3;
+  int64 topic_id = 4;
+  int32 visible_type = 5;
+  int64 ctime = 6;
+}
+
+message TopicInfo {
+  int64 topic_id = 1;
+  string topic_name = 2;
+}
+
+message ArticleRequest {
+  int64 article_id = 1;
+}
+
+message ArticleResponse {
+  ArticleInfo article_info = 1;
+}
+
+message ArticleBatchRequest {
+  repeated int64 article_ids = 1;
+}
+
+message ArticleBatchResponse {
+  map<int64, ArticleInfo> article_infos = 1;
+}
+
+message TopicRequest {
+  int64 topic_id = 1;
+}
+
+message TopicBatchRequest {
+  repeated int64 topic_ids = 1;
+}
+
+message TopicResponse {
+  TopicInfo topic_info = 1;
+}
+
+message TopicBatchResponse {
+  map<int64, TopicInfo> topic_infos = 1;
+}
+
+message PublishArticleRequest {
+  ArticleInfo article_info = 1;
+}
+
+message PushFollowFeedRequest {
+  int64 uid = 1;
+  int64 article_id = 2;
+  repeated int64 uids = 3;
+}
+
+message VisibleTypeRequest {
+  int64 article_id = 1;
+  int32 visible_type = 2;
+}
+
+message FollowRequest {
+  int64 uid = 1;
+  int64 to_uid = 2;
+}
+
+message EmptyResponse {
+}
+
+service ArticleServer {
+  rpc GetArticle(ArticleRequest) returns (ArticleResponse);
+  rpc GetBatchArticle(ArticleBatchRequest) returns (ArticleBatchResponse);
+  rpc GetTopic(TopicRequest) returns (TopicResponse);
+  rpc GetBatchTopic(TopicBatchRequest) returns (TopicBatchResponse);
+  rpc ChangeVisibleType(VisibleTypeRequest) returns (EmptyResponse);
+  rpc PublishArticle(PublishArticleRequest) returns (EmptyResponse);
+  rpc DeleteArticle(ArticleRequest) returns (EmptyResponse);
+  rpc PushFollowFeed(stream PushFollowFeedRequest) returns (EmptyResponse);
+  rpc FollowAddOutBox(FollowRequest) returns (EmptyResponse);
+  rpc UnfollowDeleteOutBox(FollowRequest) returns (EmptyResponse);
+}
