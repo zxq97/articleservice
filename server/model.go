@@ -16,8 +16,8 @@ type Article struct {
 }
 
 type Topic struct {
-	TopicID   int64  `json:"topic_id" gorm:"column:topic_id"`
-	TopicName string `json:"topic_name" gorm:"column:topic_name"`
+	TopicID   int64  `json:"topic_id"`
+	TopicName string `json:"topic_name"`
 }
 
 func (a *Article) toArticleInfo() *article_service.ArticleInfo {

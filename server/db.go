@@ -84,3 +84,31 @@ func dbDeleteArticle(ctx context.Context, articleID int64) error {
 	}
 	return err
 }
+
+func dbGetArticleEarly(ctx context.Context, uid int64, ctime string) (map[int64]int64, error) {
+	articles := []*Article{}
+	err := dbCli.Model(&Article{}).Where("ctime > ?", ctime).Find(&articles).Error
+	if err != nil {
+		log.Printf("ctx %v dbGetArticleEarly uid %v ctime %v err %v", ctx, uid, ctime, err)
+		return nil, err
+	}
+	articleMap := make(map[int64]int64, len(articles))
+	for _, v := range articles {
+		articleMap[v.ArticleID] = v.Ctime.Unix()
+	}
+	return articleMap, nil
+}
+
+func dbGetArticlesEarly(ctx context.Context, uids []int64, ctime string) (map[int64]int64, error) {
+	articles := []*Article{}
+	err := dbCli.Model(&Article{}).Where("uid in (?) and ctime > ?", uids, ctime).Error
+	if err != nil {
+		log.Printf("ctx %v dbGetArticlesEarly uids %v ctime %v err %v", ctx, uids, ctime, err)
+		return nil, err
+	}
+	articleMap := make(map[int64]int64, len(articles))
+	for _, v := range articles {
+		articleMap[v.ArticleID] = v.Ctime.Unix()
+	}
+	return articleMap, nil
+}

@@ -118,12 +118,6 @@ func (as *ArticleService) FollowAddOutBox(ctx context.Context, req *article_serv
 }
 
 func (as *ArticleService) UnfollowDeleteOutBox(ctx context.Context, req *article_service.FollowRequest, res *article_service.EmptyResponse) error {
-	ok, err := unfollowDeleteOutBox(ctx, req.Uid, req.ToUid)
-	if err != nil {
-		return err
-	}
-	if ok {
-		// fixme 还需 更新提醒服务 缓存增加红点
-	}
-	return nil
+	err := unfollowDeleteOutBox(ctx, req.Uid, req.ToUid)
+	return err
 }

@@ -1,7 +1,9 @@
 package server
 
 import (
+	"articleservice/client/social"
 	"articleservice/rpc/article/pb"
+	"articleservice/util/cast"
 	"articleservice/util/concurrent"
 	"context"
 	"time"
@@ -129,21 +131,71 @@ func pushFollowFeed(ctx context.Context, uid, articleID int64, uids []int64, ok 
 }
 
 func followAddOutBox(ctx context.Context, uid, toUID int64) (bool, error) {
-	//ok, err := cacheCheckOutBox(ctx, uid)
-	//if err != nil {
-	//	return false, err
-	//}
-	//if ok {
-	//
-	//} else {
-	//	uids, err := social.GetFollowAll(ctx, toUID)
-	//	if err != nil {
-	//		return false, err
-	//	}
-	//}
-	return false, nil
+	early, err := outBoxGetEarly(ctx, uid)
+	if err != nil {
+		return false, err
+	}
+	var (
+		uids       []int64
+		articleMap map[int64]int64
+	)
+	if early == "" {
+		uids, err = social.GetFollowAll(ctx, toUID)
+		if err != nil {
+			return false, err
+		}
+		early = time.Now().AddDate(0, 0, 30).Format("2006-01-02 15:04:05")
+		articleMap, err = dbGetArticlesEarly(ctx, uids, early)
+		if err != nil {
+			return false, err
+		}
+	} else {
+		articleMap, err = getInBoxEarly(ctx, toUID, early)
+		if err != nil {
+			return false, err
+		}
+		if articleMap == nil {
+			ctime := time.Unix(cast.ParseInt(early, 0), 0).Format("2006-01-02 15:04:05")
+			articleMap, err = dbGetArticleEarly(ctx, toUID, ctime)
+			if err != nil {
+				return false, err
+			}
+		}
+	}
+	if articleMap == nil {
+		return false, nil
+	}
+	err = addOutBox(ctx, articleMap, uid)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
-func unfollowDeleteOutBox(ctx context.Context, uid, toUID int64) (bool, error) {
-	return false, nil
+func unfollowDeleteOutBox(ctx context.Context, uid, toUID int64) error {
+	early, err := outBoxGetEarly(ctx, uid)
+	if err != nil {
+		return err
+	}
+	if early != "" {
+		var articleMap map[int64]int64
+		articleMap, err = getInBoxEarly(ctx, toUID, early)
+		if err != nil {
+			return err
+		}
+		if articleMap == nil {
+			ctime := time.Unix(cast.ParseInt(early, 0), 0).Format("2006-01-02 15:04:05")
+			articleMap, err = dbGetArticleEarly(ctx, toUID, ctime)
+			if err != nil {
+				return err
+			}
+		}
+		if articleMap != nil {
+			err = delOutBox(ctx, articleMap, uid)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

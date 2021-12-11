@@ -1,6 +1,7 @@
 package server
 
 import (
+	"articleservice/util/cast"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -190,12 +191,59 @@ func cachePushOutBox(ctx context.Context, uid, articleID int64, uids []int64) er
 	return err
 }
 
-func cacheCheckOutBox(ctx context.Context, uid int64) (bool, error) {
+func outBoxGetEarly(ctx context.Context, uid int64) (string, error) {
 	key := fmt.Sprintf(RedisKeyZOutBox, uid)
-	ok, err := redisCli.Exists(key).Result()
+	z, err := redisCli.ZRangeWithScores(key, 0, 0).Result()
 	if err != nil && err != redis.Nil {
-		log.Printf("ctx %v cacheCheckOutBox uid %v err %v", ctx, uid, err)
-		return false, err
+		log.Printf("ctx %v outBoxGetEarly uid %v err %v", ctx, uid, err)
+		return "", err
+	} else if err == redis.Nil || len(z) == 0 {
+		return "", nil
 	}
-	return ok != 0, nil
+	return cast.FormatInt(int64(z[0].Score)), nil
+}
+
+func getInBoxEarly(ctx context.Context, uid int64, ctime string) (map[int64]int64, error) {
+	key := fmt.Sprintf(RedisKeyZInBox, uid)
+	z, err := redisCli.ZRevRangeByScoreWithScores(key, redis.ZRangeBy{Max: ctime}).Result()
+	if err != nil && err != redis.Nil {
+		log.Printf("ctx %v getInBoxEarly uid %v ctime %v err %v", ctx, uid, ctx, err)
+		return nil, err
+	} else if err == redis.Nil || len(z) == 0 {
+		return nil, nil
+	}
+	articleMap := make(map[int64]int64, len(z))
+	for _, v := range z {
+		articleMap[cast.ParseInt(v.Member.(string), 0)] = int64(v.Score)
+	}
+	return articleMap, nil
+}
+
+func addOutBox(ctx context.Context, articleMap map[int64]int64, uid int64) error {
+	key := fmt.Sprintf(RedisKeyZInBox, uid)
+	z := make([]redis.Z, 0, len(articleMap))
+	for k, v := range articleMap {
+		z = append(z, redis.Z{
+			Member: cast.FormatInt(k),
+			Score:  float64(v),
+		})
+	}
+	err := redisCli.ZAdd(key, z...).Err()
+	if err != nil {
+		log.Printf("ctx %v addOutBox articlemap %v uid %v err %v", ctx, articleMap, uid, err)
+	}
+	return err
+}
+
+func delOutBox(ctx context.Context, articleMap map[int64]int64, uid int64) error {
+	key := fmt.Sprintf(RedisKeyZInBox, uid)
+	articleIDs := make([]int64, 0, len(articleMap))
+	for k := range articleMap {
+		articleIDs = append(articleIDs, k)
+	}
+	err := redisCli.ZRem(key, articleIDs).Err()
+	if err != nil {
+		log.Printf("ctx %v delOutBox articleids %v uid %v err %v", ctx, articleIDs, uid, err)
+	}
+	return err
 }
