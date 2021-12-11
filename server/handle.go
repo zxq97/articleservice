@@ -22,12 +22,12 @@ var (
 	dbCli    *gorm.DB
 )
 
-func InitService(articleConf *conf.Conf) error {
+func InitService(config *conf.Conf) error {
 	var err error
 	log.SetFlags(log.Ldate | log.Lshortfile | log.Ltime)
-	mcCli = conf.GetMC(articleConf.MC.Addr)
-	redisCli = conf.GetRedis(articleConf.Redis.Addr, articleConf.Redis.DB)
-	dbCli, err = conf.GetGorm(fmt.Sprintf(conf.MysqlAddr, articleConf.Mysql.User, articleConf.Mysql.Password, articleConf.Mysql.Host, articleConf.Mysql.Port, articleConf.Mysql.DB))
+	mcCli = conf.GetMC(config.MC.Addr)
+	redisCli = conf.GetRedis(config.Redis.Addr, config.Redis.DB)
+	dbCli, err = conf.GetGorm(fmt.Sprintf(conf.MysqlAddr, config.Mysql.User, config.Mysql.Password, config.Mysql.Host, config.Mysql.Port, config.Mysql.DB))
 	return err
 }
 
