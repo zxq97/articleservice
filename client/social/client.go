@@ -13,12 +13,12 @@ var (
 	client social_service.SocialServerService
 )
 
-func InitClient(socialConf *conf.Conf) {
+func InitClient(config *conf.Conf) {
 	service := micro.NewService(micro.Name(
-		socialConf.Grpc.Name),
+		config.Grpc.Name),
 	)
 	client = social_service.NewSocialServerService(
-		socialConf.Grpc.Name,
+		config.Grpc.Name,
 		service.Client(),
 	)
 }
