@@ -1,8 +1,11 @@
 package server
 
 import (
+	"articleservice/client/remind"
 	"articleservice/conf"
 	"articleservice/rpc/article/pb"
+	"articleservice/util/concurrent"
+	"articleservice/util/constant"
 	"context"
 	"fmt"
 	"github.com/bradfitz/gomemcache/memcache"
@@ -96,13 +99,15 @@ func (as *ArticleService) PushFollowFeed(ctx context.Context, stream article_ser
 			if err != nil {
 				return err
 			}
+			concurrent.Go(func() {
+				_ = remind.AddBatchUnread(ctx, uids, constant.RemindTypeFollowFeed)
+			})
 		} else if err == io.EOF {
 			break
 		} else {
 			return err
 		}
 	}
-	// fixme 还需 更新提醒服务 缓存增加红点
 	return nil
 }
 
@@ -112,7 +117,9 @@ func (as *ArticleService) FollowAddOutBox(ctx context.Context, req *article_serv
 		return err
 	}
 	if ok {
-		// fixme 还需 更新提醒服务 缓存增加红点
+		concurrent.Go(func() {
+			_ = remind.AddUnread(ctx, req.Uid, constant.RemindTypeFollowFeed)
+		})
 	}
 	return nil
 }

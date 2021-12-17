@@ -1,6 +1,7 @@
 package main
 
 import (
+	"articleservice/client/remind"
 	"articleservice/client/social"
 	"articleservice/conf"
 	"articleservice/rpc/article/pb"
@@ -31,6 +32,7 @@ func main() {
 		panic(err)
 	}
 
+	remind.InitClient(remindConf)
 	social.InitClient(socialConf)
 
 	err = server.InitService(articleConf)
