@@ -16,7 +16,7 @@ func dbGetArticle(ctx context.Context, articleID int64) (*Article, error) {
 
 func dbBatchGetArticles(ctx context.Context, articleIDs []int64) (map[int64]*Article, error) {
 	articles := []*Article{}
-	err := dbCli.Model(&Article{}).Where("article_id in (?)", articleIDs).Find(&articles).Error
+	err := slaveCli.Model(&Article{}).Where("article_id in (?)", articleIDs).Find(&articles).Error
 	if err != nil {
 		log.Printf("ctx %v dbBatchGetArticles article_ids %v err %v", ctx, articleIDs, err)
 		return nil, err
@@ -38,7 +38,7 @@ func dbGetTopic(ctx context.Context, topicID int64) (*Topic, error) {
 
 func dbBatchGetTopics(ctx context.Context, topicIDs []int64) (map[int64]*Topic, error) {
 	topics := []*Topic{}
-	err := dbCli.Model(&Topic{}).Where("topic_id in (?)", topicIDs).Find(&topics).Error
+	err := slaveCli.Model(&Topic{}).Where("topic_id in (?)", topicIDs).Find(&topics).Error
 	if err != nil {
 		log.Printf("ctx %v dbBatchGetTopics topic_ids %v err %v", ctx, topicIDs, err)
 		return nil, err
@@ -87,7 +87,7 @@ func dbDeleteArticle(ctx context.Context, articleID int64) error {
 
 func dbGetArticleEarly(ctx context.Context, uid int64, ctime string) (map[int64]int64, error) {
 	articles := []*Article{}
-	err := dbCli.Model(&Article{}).Where("ctime > ?", ctime).Find(&articles).Error
+	err := slaveCli.Model(&Article{}).Where("ctime > ?", ctime).Find(&articles).Error
 	if err != nil {
 		log.Printf("ctx %v dbGetArticleEarly uid %v ctime %v err %v", ctx, uid, ctime, err)
 		return nil, err
@@ -101,7 +101,7 @@ func dbGetArticleEarly(ctx context.Context, uid int64, ctime string) (map[int64]
 
 func dbGetArticlesEarly(ctx context.Context, uids []int64, ctime string) (map[int64]int64, error) {
 	articles := []*Article{}
-	err := dbCli.Model(&Article{}).Where("uid in (?) and ctime > ?", uids, ctime).Error
+	err := slaveCli.Model(&Article{}).Where("uid in (?) and ctime > ?", uids, ctime).Error
 	if err != nil {
 		log.Printf("ctx %v dbGetArticlesEarly uids %v ctime %v err %v", ctx, uids, ctime, err)
 		return nil, err
