@@ -12,9 +12,14 @@ import (
 )
 
 const (
-	ArticleConfPath = "/home/work/zzlove/conf/zzlove/api.yaml"
-	RemindConfPath  = "/home/work/zzlove/conf/zzlove/api.yaml"
-	SocialConfPath  = "/home/work/zzlove/conf/zzlove/api.yaml"
+	ApiConfPath     = "/home/work/zzlove/conf/zzlove/api.yaml"
+	ArticleConfPath = "/home/work/zzlove/conf/zzlove/article.yaml"
+	ASyncConfPath   = "/home/work/zzlove/conf/zzlove/async.yaml"
+	CommentConfPath = "/home/work/zzlove/conf/zzlove/comment.yaml"
+	OnlineConfPath  = "/home/work/zzlove/conf/zzlove/online.yaml"
+	RemindConfPath  = "/home/work/zzlove/conf/zzlove/remind.yaml"
+	SocialConfPath  = "/home/work/zzlove/conf/zzlove/social.yaml"
+	UserConfPath    = "/home/work/zzlove/conf/zzlove/user.yaml"
 
 	MysqlAddr = "%v:%v@tcp(%v:%v)/%v?charset=utf8mb4&parseTime=True"
 )
