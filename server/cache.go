@@ -1,13 +1,13 @@
 package server
 
 import (
+	"articleservice/global"
 	"articleservice/util/cast"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/go-redis/redis"
-	"log"
 	"time"
 )
 
@@ -38,7 +38,7 @@ func cacheBatchGetArticle(ctx context.Context, articleIDs []int64) (map[int64]*A
 	}
 	res, err := mcCli.GetMulti(keys)
 	if err != nil {
-		log.Printf("ctx %v cache get article_ids %v err %v", ctx, articleIDs, err)
+		global.ExcLog.Printf("ctx %v cache get article_ids %v err %v", ctx, articleIDs, err)
 		return nil, articleIDs, err
 	}
 	articleMap := make(map[int64]*Article, len(articleIDs))
@@ -46,7 +46,7 @@ func cacheBatchGetArticle(ctx context.Context, articleIDs []int64) (map[int64]*A
 		article := Article{}
 		err = json.Unmarshal(v.Value, &article)
 		if err != nil {
-			log.Printf("ctx %v cache get article %v josn err %v", ctx, v.Value, err)
+			global.ExcLog.Printf("ctx %v cache get article %v josn err %v", ctx, v.Value, err)
 			continue
 		}
 		articleMap[article.ArticleID] = &article
@@ -63,12 +63,12 @@ func cacheBatchGetArticle(ctx context.Context, articleIDs []int64) (map[int64]*A
 func cacheSetArticle(ctx context.Context, article *Article) {
 	val, err := json.Marshal(article)
 	if err != nil {
-		log.Printf("ctx %v cache set article_id %v json err %v", ctx, article.ArticleID, err)
+		global.ExcLog.Printf("ctx %v cache set article_id %v json err %v", ctx, article.ArticleID, err)
 		return
 	}
 	err = mcCli.Set(&memcache.Item{Key: fmt.Sprintf(MCKeyArticleInfo, article.ArticleID), Value: val, Expiration: MCKeyArticleInfoTTL})
 	if err != nil {
-		log.Printf("ctx %v cache set article_id %v mc err %v", ctx, article.ArticleID, err)
+		global.ExcLog.Printf("ctx %v cache set article_id %v mc err %v", ctx, article.ArticleID, err)
 	}
 }
 
@@ -76,12 +76,12 @@ func cacheBatchSetArticle(ctx context.Context, articleMap map[int64]*Article) {
 	for k, v := range articleMap {
 		val, err := json.Marshal(v)
 		if err != nil {
-			log.Printf("ctx %v cache set article_id %v json err %v", ctx, k, err)
+			global.ExcLog.Printf("ctx %v cache set article_id %v json err %v", ctx, k, err)
 			continue
 		}
 		err = mcCli.Set(&memcache.Item{Key: fmt.Sprintf(MCKeyArticleInfo, k), Value: val, Expiration: MCKeyArticleInfoTTL})
 		if err != nil {
-			log.Printf("ctx %v cache set article_id %v mc err %v", ctx, k, err)
+			global.ExcLog.Printf("ctx %v cache set article_id %v mc err %v", ctx, k, err)
 		}
 	}
 }
@@ -89,7 +89,7 @@ func cacheBatchSetArticle(ctx context.Context, articleMap map[int64]*Article) {
 func cacheDelArticle(ctx context.Context, articleID int64) error {
 	err := mcCli.Delete(fmt.Sprintf(MCKeyArticleInfo, articleID))
 	if err != nil {
-		log.Printf("ctx %v cache del article_id %v err %v", ctx, articleID, err)
+		global.ExcLog.Printf("ctx %v cache del article_id %v err %v", ctx, articleID, err)
 	}
 	return err
 }
@@ -109,7 +109,7 @@ func cacheBatchGetTopic(ctx context.Context, topicIDs []int64) (map[int64]*Topic
 	}
 	res, err := mcCli.GetMulti(keys)
 	if err != nil {
-		log.Printf("ctx %v cacheBatchGetTopic topic_ids %v err %v", ctx, topicIDs, err)
+		global.ExcLog.Printf("ctx %v cacheBatchGetTopic topic_ids %v err %v", ctx, topicIDs, err)
 		return nil, topicIDs, err
 	}
 	topicMap := make(map[int64]*Topic, len(topicIDs))
@@ -117,7 +117,7 @@ func cacheBatchGetTopic(ctx context.Context, topicIDs []int64) (map[int64]*Topic
 		topic := Topic{}
 		err = json.Unmarshal(v.Value, &topic)
 		if err != nil {
-			log.Printf("ctx %v cacheBatchGetTopic topic %v josn err %v", ctx, v.Value, err)
+			global.ExcLog.Printf("ctx %v cacheBatchGetTopic topic %v josn err %v", ctx, v.Value, err)
 			continue
 		}
 		topicMap[topic.TopicID] = &topic
@@ -134,12 +134,12 @@ func cacheBatchGetTopic(ctx context.Context, topicIDs []int64) (map[int64]*Topic
 func cacheSetTopic(ctx context.Context, topic *Topic) {
 	val, err := json.Marshal(topic)
 	if err != nil {
-		log.Printf("ctx %v cache set topic_id %v json err %v", ctx, topic.TopicID, err)
+		global.ExcLog.Printf("ctx %v cache set topic_id %v json err %v", ctx, topic.TopicID, err)
 		return
 	}
 	err = mcCli.Set(&memcache.Item{Key: fmt.Sprintf(MCKeyTopicInfo, topic.TopicID), Value: val, Expiration: MCKeyTopicInfoTTL})
 	if err != nil {
-		log.Printf("ctx %v cache set topic_id %v mc err %v", ctx, topic.TopicID, err)
+		global.ExcLog.Printf("ctx %v cache set topic_id %v mc err %v", ctx, topic.TopicID, err)
 	}
 }
 
@@ -147,12 +147,12 @@ func cacheBatchSetTopic(ctx context.Context, topicMap map[int64]*Topic) {
 	for k, v := range topicMap {
 		val, err := json.Marshal(v)
 		if err != nil {
-			log.Printf("ctx %v cache set topic_id %v json err %v", ctx, k, err)
+			global.ExcLog.Printf("ctx %v cache set topic_id %v json err %v", ctx, k, err)
 			continue
 		}
 		err = mcCli.Set(&memcache.Item{Key: fmt.Sprintf(MCKeyTopicInfo, k), Value: val, Expiration: MCKeyArticleInfoTTL})
 		if err != nil {
-			log.Printf("ctx %v cache set topic_id %v mc err %v", ctx, k, err)
+			global.ExcLog.Printf("ctx %v cache set topic_id %v mc err %v", ctx, k, err)
 		}
 	}
 }
@@ -164,7 +164,7 @@ func cachePushInBox(ctx context.Context, uid, articleID int64) error {
 	pipe.Expire(key, RedisKeyBoxTTL)
 	_, err := pipe.Exec()
 	if err != nil {
-		log.Printf("ctx %v cachePushInBox uid %v articleid %v err %v", ctx, uid, articleID, err)
+		global.ExcLog.Printf("ctx %v cachePushInBox uid %v articleid %v err %v", ctx, uid, articleID, err)
 	}
 	return err
 }
@@ -186,7 +186,7 @@ func cachePushOutBox(ctx context.Context, uid, articleID int64, uids []int64) er
 	}
 	_, err := pipe.Exec()
 	if err != nil {
-		log.Printf("ctx %v cachePushInBox articleid %v uids %v err %v", ctx, articleID, uids, err)
+		global.ExcLog.Printf("ctx %v cachePushInBox articleid %v uids %v err %v", ctx, articleID, uids, err)
 	}
 	return err
 }
@@ -195,7 +195,7 @@ func outBoxGetEarly(ctx context.Context, uid int64) (string, error) {
 	key := fmt.Sprintf(RedisKeyZOutBox, uid)
 	z, err := redisCli.ZRangeWithScores(key, 0, 0).Result()
 	if err != nil && err != redis.Nil {
-		log.Printf("ctx %v outBoxGetEarly uid %v err %v", ctx, uid, err)
+		global.ExcLog.Printf("ctx %v outBoxGetEarly uid %v err %v", ctx, uid, err)
 		return "", err
 	} else if err == redis.Nil || len(z) == 0 {
 		return "", nil
@@ -207,7 +207,7 @@ func getInBoxEarly(ctx context.Context, uid int64, ctime string) (map[int64]int6
 	key := fmt.Sprintf(RedisKeyZInBox, uid)
 	z, err := redisCli.ZRevRangeByScoreWithScores(key, redis.ZRangeBy{Max: ctime}).Result()
 	if err != nil && err != redis.Nil {
-		log.Printf("ctx %v getInBoxEarly uid %v ctime %v err %v", ctx, uid, ctx, err)
+		global.ExcLog.Printf("ctx %v getInBoxEarly uid %v ctime %v err %v", ctx, uid, ctx, err)
 		return nil, err
 	} else if err == redis.Nil || len(z) == 0 {
 		return nil, nil
@@ -230,7 +230,7 @@ func addOutBox(ctx context.Context, articleMap map[int64]int64, uid int64) error
 	}
 	err := redisCli.ZAdd(key, z...).Err()
 	if err != nil {
-		log.Printf("ctx %v addOutBox articlemap %v uid %v err %v", ctx, articleMap, uid, err)
+		global.ExcLog.Printf("ctx %v addOutBox articlemap %v uid %v err %v", ctx, articleMap, uid, err)
 	}
 	return err
 }
@@ -243,7 +243,7 @@ func delOutBox(ctx context.Context, articleMap map[int64]int64, uid int64) error
 	}
 	err := redisCli.ZRem(key, articleIDs).Err()
 	if err != nil {
-		log.Printf("ctx %v delOutBox articleids %v uid %v err %v", ctx, articleIDs, uid, err)
+		global.ExcLog.Printf("ctx %v delOutBox articleids %v uid %v err %v", ctx, articleIDs, uid, err)
 	}
 	return err
 }

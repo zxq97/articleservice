@@ -2,10 +2,10 @@ package remind
 
 import (
 	"articleservice/conf"
+	"articleservice/global"
 	"articleservice/rpc/remind/pb"
 	"context"
 	"github.com/micro/go-micro"
-	"log"
 )
 
 var (
@@ -25,7 +25,7 @@ func InitClient(config *conf.Conf) {
 func AddUnread(ctx context.Context, uid int64, rType int32) error {
 	_, err := client.AddUnread(ctx, toRemindInfo(uid, rType))
 	if err != nil {
-		log.Printf("ctx %v AddUnread uid %v rtype %v err %v", ctx, uid, rType, err)
+		global.ExcLog.Printf("ctx %v AddUnread uid %v rtype %v err %v", ctx, uid, rType, err)
 	}
 	return err
 }
@@ -33,7 +33,7 @@ func AddUnread(ctx context.Context, uid int64, rType int32) error {
 func AddBatchUnread(ctx context.Context, uids []int64, rType int32) error {
 	_, err := client.AddBatchUnread(ctx, toBatchRemindRequest(uids, rType))
 	if err != nil {
-		log.Printf("ctx %v AddBatchUnread uids %v rtype %v err %v", ctx, uids, rType, err)
+		global.ExcLog.Printf("ctx %v AddBatchUnread uids %v rtype %v err %v", ctx, uids, rType, err)
 	}
 	return err
 }
@@ -41,7 +41,7 @@ func AddBatchUnread(ctx context.Context, uids []int64, rType int32) error {
 func DeleteUnread(ctx context.Context, uid int64, rType int32) error {
 	_, err := client.DeleteUnread(ctx, toRemindInfo(uid, rType))
 	if err != nil {
-		log.Printf("ctx %v DeleteUnread uid %v rtype %v err %v", ctx, uid, rType, err)
+		global.ExcLog.Printf("ctx %v DeleteUnread uid %v rtype %v err %v", ctx, uid, rType, err)
 	}
 	return err
 }
@@ -49,7 +49,7 @@ func DeleteUnread(ctx context.Context, uid int64, rType int32) error {
 func CheckUnread(ctx context.Context, uid int64, rType int32) (bool, error) {
 	res, err := client.CheckUnread(ctx, toRemindInfo(uid, rType))
 	if err != nil {
-		log.Printf("ctx %v CheckUnread uid %v rtype %v err %v", ctx, uid, rType, err)
+		global.ExcLog.Printf("ctx %v CheckUnread uid %v rtype %v err %v", ctx, uid, rType, err)
 		return false, err
 	}
 	return res.Unread, nil

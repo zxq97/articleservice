@@ -4,6 +4,7 @@ import (
 	"articleservice/client/remind"
 	"articleservice/client/social"
 	"articleservice/conf"
+	"articleservice/global"
 	"articleservice/rpc/article/pb"
 	"articleservice/server"
 	"github.com/micro/go-micro"
@@ -34,6 +35,15 @@ func main() {
 
 	remind.InitClient(remindConf)
 	social.InitClient(socialConf)
+
+	global.InfoLog, err = conf.InitLog(articleConf.InfoLog.Path)
+	if err != nil {
+		panic(err)
+	}
+	global.ExcLog, err = conf.InitLog(articleConf.ExcLog.Path)
+	if err != nil {
+		panic(err)
+	}
 
 	err = server.InitService(articleConf)
 	if err != nil {
