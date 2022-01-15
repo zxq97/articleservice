@@ -33,9 +33,6 @@ func main() {
 		panic(err)
 	}
 
-	remind.InitClient(remindConf)
-	social.InitClient(socialConf)
-
 	global.InfoLog, err = conf.InitLog(articleConf.InfoLog.Path)
 	if err != nil {
 		panic(err)
@@ -44,6 +41,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	remind.InitClient(remindConf)
+	social.InitClient(socialConf)
 
 	err = server.InitService(articleConf)
 	if err != nil {
