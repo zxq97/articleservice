@@ -93,21 +93,7 @@ func changeVisibleType(ctx context.Context, articleID int64, visibleType int32) 
 
 func publishArticle(ctx context.Context, articleID, topicID, uid int64, content string, visibleType int32) error {
 	err := dbAddArticle(ctx, articleID, topicID, uid, content, visibleType)
-	if err != nil {
-		return err
-	}
-	concurrent.Go(func() {
-		article := &Article{
-			ArticleID:   articleID,
-			TopicID:     topicID,
-			UID:         uid,
-			Content:     content,
-			VisibleType: visibleType,
-			Ctime:       time.Now(),
-		}
-		cacheSetArticle(ctx, article)
-	})
-	return nil
+	return err
 }
 
 func deleteArticle(ctx context.Context, articleID int64) error {
