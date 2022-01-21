@@ -3,6 +3,7 @@ package server
 import (
 	"articleservice/client/remind"
 	"articleservice/conf"
+	"articleservice/global"
 	"articleservice/rpc/article/pb"
 	"articleservice/util/concurrent"
 	"articleservice/util/constant"
@@ -93,11 +94,13 @@ func (as *ArticleService) PushFollowFeed(ctx context.Context, stream article_ser
 	defer stream.Close()
 	for {
 		req, err := stream.Recv()
+		global.InfoLog.Printf("ctx %v req %v err %v", ctx, req, err)
 		if err == nil {
 			uid := req.Uid
 			articleID := req.ArticleId
 			uids := req.Uids
 			err = pushFollowFeed(ctx, uid, articleID, uids, flag)
+			global.InfoLog.Printf("ctx %v err %v", ctx, err)
 			flag = true
 			if err != nil {
 				return err

@@ -2,6 +2,7 @@ package server
 
 import (
 	"articleservice/client/social"
+	"articleservice/global"
 	"articleservice/rpc/article/pb"
 	"articleservice/util/cast"
 	"articleservice/util/concurrent"
@@ -120,8 +121,10 @@ func deleteArticle(ctx context.Context, articleID int64) error {
 
 func pushFollowFeed(ctx context.Context, uid, articleID int64, uids []int64, ok bool) error {
 	var err error
+	global.InfoLog.Printf("ctx %v uid %v articleid %v uids %v ok %v", ctx, uids, articleID, uids, ok)
 	if !ok {
 		err = cachePushInBox(ctx, uid, articleID)
+		global.InfoLog.Printf("ctx %v err %v", ctx, err)
 		if err != nil {
 			return err
 		}
