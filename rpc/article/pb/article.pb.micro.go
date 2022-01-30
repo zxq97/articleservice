@@ -31,7 +31,7 @@ var _ context.Context
 var _ client.Option
 var _ server.Option
 
-// Client API for ArticleServer server
+// Client API for ArticleServer service
 
 type ArticleServerService interface {
 	GetArticle(ctx context.Context, in *ArticleRequest, opts ...client.CallOption) (*ArticleResponse, error)
@@ -41,9 +41,8 @@ type ArticleServerService interface {
 	ChangeVisibleType(ctx context.Context, in *VisibleTypeRequest, opts ...client.CallOption) (*EmptyResponse, error)
 	PublishArticle(ctx context.Context, in *PublishArticleRequest, opts ...client.CallOption) (*EmptyResponse, error)
 	DeleteArticle(ctx context.Context, in *ArticleRequest, opts ...client.CallOption) (*EmptyResponse, error)
-	PushFollowFeed(ctx context.Context, opts ...client.CallOption) (ArticleServer_PushFollowFeedService, error)
-	FollowAddOutBox(ctx context.Context, in *FollowRequest, opts ...client.CallOption) (*EmptyResponse, error)
-	UnfollowDeleteOutBox(ctx context.Context, in *FollowRequest, opts ...client.CallOption) (*EmptyResponse, error)
+	PushInBox(ctx context.Context, in *PushInBoxRequest, opts ...client.CallOption) (*EmptyResponse, error)
+	GetInBox(ctx context.Context, in *GetInBoxRequest, opts ...client.CallOption) (*GetInBoxResponse, error)
 }
 
 type articleServerService struct {
@@ -134,44 +133,8 @@ func (c *articleServerService) DeleteArticle(ctx context.Context, in *ArticleReq
 	return out, nil
 }
 
-func (c *articleServerService) PushFollowFeed(ctx context.Context, opts ...client.CallOption) (ArticleServer_PushFollowFeedService, error) {
-	req := c.c.NewRequest(c.name, "ArticleServer.PushFollowFeed", &PushFollowFeedRequest{})
-	stream, err := c.c.Stream(ctx, req, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return &articleServerServicePushFollowFeed{stream}, nil
-}
-
-type ArticleServer_PushFollowFeedService interface {
-	SendMsg(interface{}) error
-	RecvMsg(interface{}) error
-	Close() error
-	Send(*PushFollowFeedRequest) error
-}
-
-type articleServerServicePushFollowFeed struct {
-	stream client.Stream
-}
-
-func (x *articleServerServicePushFollowFeed) Close() error {
-	return x.stream.Close()
-}
-
-func (x *articleServerServicePushFollowFeed) SendMsg(m interface{}) error {
-	return x.stream.Send(m)
-}
-
-func (x *articleServerServicePushFollowFeed) RecvMsg(m interface{}) error {
-	return x.stream.Recv(m)
-}
-
-func (x *articleServerServicePushFollowFeed) Send(m *PushFollowFeedRequest) error {
-	return x.stream.Send(m)
-}
-
-func (c *articleServerService) FollowAddOutBox(ctx context.Context, in *FollowRequest, opts ...client.CallOption) (*EmptyResponse, error) {
-	req := c.c.NewRequest(c.name, "ArticleServer.FollowAddOutBox", in)
+func (c *articleServerService) PushInBox(ctx context.Context, in *PushInBoxRequest, opts ...client.CallOption) (*EmptyResponse, error) {
+	req := c.c.NewRequest(c.name, "ArticleServer.PushInBox", in)
 	out := new(EmptyResponse)
 	err := c.c.Call(ctx, req, out, opts...)
 	if err != nil {
@@ -180,9 +143,9 @@ func (c *articleServerService) FollowAddOutBox(ctx context.Context, in *FollowRe
 	return out, nil
 }
 
-func (c *articleServerService) UnfollowDeleteOutBox(ctx context.Context, in *FollowRequest, opts ...client.CallOption) (*EmptyResponse, error) {
-	req := c.c.NewRequest(c.name, "ArticleServer.UnfollowDeleteOutBox", in)
-	out := new(EmptyResponse)
+func (c *articleServerService) GetInBox(ctx context.Context, in *GetInBoxRequest, opts ...client.CallOption) (*GetInBoxResponse, error) {
+	req := c.c.NewRequest(c.name, "ArticleServer.GetInBox", in)
+	out := new(GetInBoxResponse)
 	err := c.c.Call(ctx, req, out, opts...)
 	if err != nil {
 		return nil, err
@@ -190,7 +153,7 @@ func (c *articleServerService) UnfollowDeleteOutBox(ctx context.Context, in *Fol
 	return out, nil
 }
 
-// Server API for ArticleServer server
+// Server API for ArticleServer service
 
 type ArticleServerHandler interface {
 	GetArticle(context.Context, *ArticleRequest, *ArticleResponse) error
@@ -200,9 +163,8 @@ type ArticleServerHandler interface {
 	ChangeVisibleType(context.Context, *VisibleTypeRequest, *EmptyResponse) error
 	PublishArticle(context.Context, *PublishArticleRequest, *EmptyResponse) error
 	DeleteArticle(context.Context, *ArticleRequest, *EmptyResponse) error
-	PushFollowFeed(context.Context, ArticleServer_PushFollowFeedStream) error
-	FollowAddOutBox(context.Context, *FollowRequest, *EmptyResponse) error
-	UnfollowDeleteOutBox(context.Context, *FollowRequest, *EmptyResponse) error
+	PushInBox(context.Context, *PushInBoxRequest, *EmptyResponse) error
+	GetInBox(context.Context, *GetInBoxRequest, *GetInBoxResponse) error
 }
 
 func RegisterArticleServerHandler(s server.Server, hdlr ArticleServerHandler, opts ...server.HandlerOption) error {
@@ -214,9 +176,8 @@ func RegisterArticleServerHandler(s server.Server, hdlr ArticleServerHandler, op
 		ChangeVisibleType(ctx context.Context, in *VisibleTypeRequest, out *EmptyResponse) error
 		PublishArticle(ctx context.Context, in *PublishArticleRequest, out *EmptyResponse) error
 		DeleteArticle(ctx context.Context, in *ArticleRequest, out *EmptyResponse) error
-		PushFollowFeed(ctx context.Context, stream server.Stream) error
-		FollowAddOutBox(ctx context.Context, in *FollowRequest, out *EmptyResponse) error
-		UnfollowDeleteOutBox(ctx context.Context, in *FollowRequest, out *EmptyResponse) error
+		PushInBox(ctx context.Context, in *PushInBoxRequest, out *EmptyResponse) error
+		GetInBox(ctx context.Context, in *GetInBoxRequest, out *GetInBoxResponse) error
 	}
 	type ArticleServer struct {
 		articleServer
@@ -257,45 +218,10 @@ func (h *articleServerHandler) DeleteArticle(ctx context.Context, in *ArticleReq
 	return h.ArticleServerHandler.DeleteArticle(ctx, in, out)
 }
 
-func (h *articleServerHandler) PushFollowFeed(ctx context.Context, stream server.Stream) error {
-	return h.ArticleServerHandler.PushFollowFeed(ctx, &articleServerPushFollowFeedStream{stream})
+func (h *articleServerHandler) PushInBox(ctx context.Context, in *PushInBoxRequest, out *EmptyResponse) error {
+	return h.ArticleServerHandler.PushInBox(ctx, in, out)
 }
 
-type ArticleServer_PushFollowFeedStream interface {
-	SendMsg(interface{}) error
-	RecvMsg(interface{}) error
-	Close() error
-	Recv() (*PushFollowFeedRequest, error)
-}
-
-type articleServerPushFollowFeedStream struct {
-	stream server.Stream
-}
-
-func (x *articleServerPushFollowFeedStream) Close() error {
-	return x.stream.Close()
-}
-
-func (x *articleServerPushFollowFeedStream) SendMsg(m interface{}) error {
-	return x.stream.Send(m)
-}
-
-func (x *articleServerPushFollowFeedStream) RecvMsg(m interface{}) error {
-	return x.stream.Recv(m)
-}
-
-func (x *articleServerPushFollowFeedStream) Recv() (*PushFollowFeedRequest, error) {
-	m := new(PushFollowFeedRequest)
-	if err := x.stream.Recv(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (h *articleServerHandler) FollowAddOutBox(ctx context.Context, in *FollowRequest, out *EmptyResponse) error {
-	return h.ArticleServerHandler.FollowAddOutBox(ctx, in, out)
-}
-
-func (h *articleServerHandler) UnfollowDeleteOutBox(ctx context.Context, in *FollowRequest, out *EmptyResponse) error {
-	return h.ArticleServerHandler.UnfollowDeleteOutBox(ctx, in, out)
+func (h *articleServerHandler) GetInBox(ctx context.Context, in *GetInBoxRequest, out *GetInBoxResponse) error {
+	return h.ArticleServerHandler.GetInBox(ctx, in, out)
 }

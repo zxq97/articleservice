@@ -33,11 +33,15 @@ func main() {
 		panic(err)
 	}
 
-	global.InfoLog, err = conf.InitLog(articleConf.InfoLog.Path)
+	global.InfoLog, err = conf.InitLog(articleConf.LogPath.Info)
 	if err != nil {
 		panic(err)
 	}
-	global.ExcLog, err = conf.InitLog(articleConf.ExcLog.Path)
+	global.ExcLog, err = conf.InitLog(articleConf.LogPath.Exc)
+	if err != nil {
+		panic(err)
+	}
+	global.DebugLog, err = conf.InitLog(articleConf.LogPath.Debug)
 	if err != nil {
 		panic(err)
 	}

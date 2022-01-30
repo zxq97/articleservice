@@ -85,30 +85,46 @@ func dbDeleteArticle(ctx context.Context, articleID int64) error {
 	return err
 }
 
-func dbGetArticleEarly(ctx context.Context, uid int64, ctime string) (map[int64]int64, error) {
+func dbGetSelfArticle(ctx context.Context, uid int64) ([]int64, map[int64]int64, error) {
 	articles := []*Article{}
-	err := slaveCli.Model(&Article{}).Where("ctime > ?", ctime).Find(&articles).Error
+	err := slaveCli.Model(&Article{}).Where("uid = ?", uid).Order("ctime desc").Find(&articles).Error
 	if err != nil {
-		global.ExcLog.Printf("ctx %v dbGetArticleEarly uid %v ctime %v err %v", ctx, uid, ctime, err)
-		return nil, err
+		global.ExcLog.Printf("ctx %v dbGetSelfArticle uid %v err %v", ctx, uid, err)
+		return nil, nil, err
 	}
+	ids := make([]int64, len(articles))
 	articleMap := make(map[int64]int64, len(articles))
-	for _, v := range articles {
+	for k, v := range articles {
+		ids[k] = v.ArticleID
 		articleMap[v.ArticleID] = v.Ctime.Unix()
 	}
-	return articleMap, nil
+	return ids, articleMap, nil
 }
 
-func dbGetArticlesEarly(ctx context.Context, uids []int64, ctime string) (map[int64]int64, error) {
-	articles := []*Article{}
-	err := slaveCli.Model(&Article{}).Where("uid in (?) and ctime > ?", uids, ctime).Error
-	if err != nil {
-		global.ExcLog.Printf("ctx %v dbGetArticlesEarly uids %v ctime %v err %v", ctx, uids, ctime, err)
-		return nil, err
-	}
-	articleMap := make(map[int64]int64, len(articles))
-	for _, v := range articles {
-		articleMap[v.ArticleID] = v.Ctime.Unix()
-	}
-	return articleMap, nil
-}
+//func dbGetArticleEarly(ctx context.Context, uid int64, ctime string) (map[int64]int64, error) {
+//	articles := []*Article{}
+//	err := slaveCli.Model(&Article{}).Where("ctime > ?", ctime).Find(&articles).Error
+//	if err != nil {
+//		global.ExcLog.Printf("ctx %v dbGetArticleEarly uid %v ctime %v err %v", ctx, uid, ctime, err)
+//		return nil, err
+//	}
+//	articleMap := make(map[int64]int64, len(articles))
+//	for _, v := range articles {
+//		articleMap[v.ArticleID] = v.Ctime.Unix()
+//	}
+//	return articleMap, nil
+//}
+//
+//func dbGetArticlesEarly(ctx context.Context, uids []int64, ctime string) (map[int64]int64, error) {
+//	articles := []*Article{}
+//	err := slaveCli.Model(&Article{}).Where("uid in (?) and ctime > ?", uids, ctime).Error
+//	if err != nil {
+//		global.ExcLog.Printf("ctx %v dbGetArticlesEarly uids %v ctime %v err %v", ctx, uids, ctime, err)
+//		return nil, err
+//	}
+//	articleMap := make(map[int64]int64, len(articles))
+//	for _, v := range articles {
+//		articleMap[v.ArticleID] = v.Ctime.Unix()
+//	}
+//	return articleMap, nil
+//}
