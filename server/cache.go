@@ -2,13 +2,10 @@ package server
 
 import (
 	"articleservice/global"
-	"articleservice/util/cast"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/go-redis/redis/v8"
-	"time"
 )
 
 const (
@@ -16,8 +13,6 @@ const (
 	MCKeyTopicInfoTTL   = 10 * 60
 	MCKeyArticleInfo    = "article_service_info_%v"       // article_id article
 	MCKeyTopicInfo      = "article_service_topic_info_%v" // topic_id topic
-
-	RedisKeyZInBox = "article_service_in_box_%v" // uid article_id ctime
 )
 
 func cacheGetArticle(ctx context.Context, articleID int64) (*Article, error) {
@@ -153,157 +148,3 @@ func cacheBatchSetTopic(ctx context.Context, topicMap map[int64]*Topic) {
 		}
 	}
 }
-
-func cachePushInBox(ctx context.Context, uid, articleID int64) error {
-	key := fmt.Sprintf(RedisKeyZInBox, uid)
-	luaScript := redis.NewScript(`
-		local val = redis.call("exist", KEYS[1])
-		if ( val == 1 ) then
-			return redis.call("zadd", KEYS[1], KEYS[2], KEYS[3])
-		else
-			return -1
-		end
-	`)
-	_, err := luaScript.Run(ctx, redisCli, []string{key, cast.FormatInt(time.Now().Unix()), cast.FormatInt(articleID)}).Result()
-	if err != nil {
-		global.ExcLog.Printf("ctx %v cachePushInBox uid %v articleid %v err %v", ctx, uid, articleID, err)
-	}
-	return err
-}
-
-func cacheSetInBox(ctx context.Context, uid int64, articleMap map[int64]int64) error {
-	key := fmt.Sprintf(RedisKeyZInBox, uid)
-	zs := make([]*redis.Z, 0, len(articleMap))
-	for k, v := range articleMap {
-		zs = append(zs, &redis.Z{
-			Member: k,
-			Score:  float64(v),
-		})
-	}
-	err := redisCli.ZAdd(ctx, key, zs...).Err()
-	if err != nil {
-		global.ExcLog.Printf("ctx %v cacheSetInBox uid %v articlemap %v err %v", ctx, uid, articleMap, err)
-	}
-	return err
-}
-
-func cacheGetInBox(ctx context.Context, uid, cursor, offset int64) ([]int64, int64, bool, error) {
-	var (
-		val     []string
-		nextCur int64
-		hasMore bool
-		err     error
-	)
-	key := fmt.Sprintf(RedisKeyZInBox, uid)
-	val, err = redisCli.ZRevRange(ctx, key, cursor, cursor+offset).Result()
-	if err != nil {
-		if err == redis.Nil {
-			return nil, 0, false, nil
-		}
-		global.ExcLog.Printf("ctx %v cacheGetInBox uid %v cursor %v err %v", ctx, uid, cursor, err)
-		return nil, 0, false, err
-	}
-	if len(val) > int(offset) {
-		hasMore = true
-	}
-	ids := make([]int64, 0, offset)
-	for _, v := range val {
-		nextCur = cast.ParseInt(v, 0)
-		if len(ids) == int(offset) {
-			break
-		}
-		ids = append(ids, nextCur)
-	}
-	return ids, nextCur, hasMore, nil
-}
-
-//func cachePushInBox(ctx context.Context, uid, articleID int64) error {
-//	key := fmt.Sprintf(RedisKeyZInBox, uid)
-//	pipe := redisCli.Pipeline()
-//	pipe.ZAdd(key, redis.Z{Member: articleID, Score: float64(time.Now().Unix())})
-//	pipe.Expire(key, RedisKeyBoxTTL)
-//	_, err := pipe.Exec()
-//	if err != nil {
-//		global.ExcLog.Printf("ctx %v cachePushInBox uid %v articleid %v err %v", ctx, uid, articleID, err)
-//	}
-//	return err
-//}
-//
-//func cachePushOutBox(ctx context.Context, uid, articleID int64, uids []int64) error {
-//	now := float64(time.Now().Unix())
-//	pipe := redisCli.Pipeline()
-//	var (
-//		key  string
-//		aKey string
-//	)
-//	for _, v := range uids {
-//		key = fmt.Sprintf(RedisKeyZOutBox, v)
-//		aKey = fmt.Sprintf(RedisKeySAlready, v)
-//		pipe.ZAdd(key, redis.Z{Member: articleID, Score: now})
-//		pipe.SAdd(aKey, uid)
-//		pipe.Expire(key, RedisKeyBoxTTL)
-//		pipe.Expire(aKey, RedisKeyBoxTTL)
-//	}
-//	_, err := pipe.Exec()
-//	if err != nil {
-//		global.ExcLog.Printf("ctx %v cachePushInBox articleid %v uids %v err %v", ctx, articleID, uids, err)
-//	}
-//	return err
-//}
-//
-//func outBoxGetEarly(ctx context.Context, uid int64) (string, error) {
-//	key := fmt.Sprintf(RedisKeyZOutBox, uid)
-//	z, err := redisCli.ZRangeWithScores(key, 0, 0).Result()
-//	if err != nil && err != redis.Nil {
-//		global.ExcLog.Printf("ctx %v outBoxGetEarly uid %v err %v", ctx, uid, err)
-//		return "", err
-//	} else if err == redis.Nil || len(z) == 0 {
-//		return "", nil
-//	}
-//	return cast.FormatInt(int64(z[0].Score)), nil
-//}
-//
-//func getInBoxEarly(ctx context.Context, uid int64, ctime string) (map[int64]int64, error) {
-//	key := fmt.Sprintf(RedisKeyZInBox, uid)
-//	z, err := redisCli.ZRevRangeByScoreWithScores(key, redis.ZRangeBy{Max: ctime}).Result()
-//	if err != nil && err != redis.Nil {
-//		global.ExcLog.Printf("ctx %v getInBoxEarly uid %v ctime %v err %v", ctx, uid, ctx, err)
-//		return nil, err
-//	} else if err == redis.Nil || len(z) == 0 {
-//		return nil, nil
-//	}
-//	articleMap := make(map[int64]int64, len(z))
-//	for _, v := range z {
-//		articleMap[cast.ParseInt(v.Member.(string), 0)] = int64(v.Score)
-//	}
-//	return articleMap, nil
-//}
-//
-//func addOutBox(ctx context.Context, articleMap map[int64]int64, uid int64) error {
-//	key := fmt.Sprintf(RedisKeyZInBox, uid)
-//	z := make([]redis.Z, 0, len(articleMap))
-//	for k, v := range articleMap {
-//		z = append(z, redis.Z{
-//			Member: cast.FormatInt(k),
-//			Score:  float64(v),
-//		})
-//	}
-//	err := redisCli.ZAdd(key, z...).Err()
-//	if err != nil {
-//		global.ExcLog.Printf("ctx %v addOutBox articlemap %v uid %v err %v", ctx, articleMap, uid, err)
-//	}
-//	return err
-//}
-//
-//func delOutBox(ctx context.Context, articleMap map[int64]int64, uid int64) error {
-//	key := fmt.Sprintf(RedisKeyZInBox, uid)
-//	articleIDs := make([]int64, 0, len(articleMap))
-//	for k := range articleMap {
-//		articleIDs = append(articleIDs, k)
-//	}
-//	err := redisCli.ZRem(key, articleIDs).Err()
-//	if err != nil {
-//		global.ExcLog.Printf("ctx %v delOutBox articleids %v uid %v err %v", ctx, articleIDs, uid, err)
-//	}
-//	return err
-//}

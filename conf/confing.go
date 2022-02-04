@@ -22,6 +22,7 @@ const (
 	RemindConfPath  = "/home/work/zzlove/conf/zzlove/remind.yaml"
 	SocialConfPath  = "/home/work/zzlove/conf/zzlove/social.yaml"
 	UserConfPath    = "/home/work/zzlove/conf/zzlove/user.yaml"
+	FeedConfPath    = "/home/work/zzlove/conf/zzlove/feed.yaml"
 
 	MysqlAddr = "%v:%v@tcp(%v:%v)/%v?charset=utf8mb4&parseTime=True"
 )

@@ -41,8 +41,6 @@ type ArticleServerService interface {
 	ChangeVisibleType(ctx context.Context, in *VisibleTypeRequest, opts ...client.CallOption) (*EmptyResponse, error)
 	PublishArticle(ctx context.Context, in *PublishArticleRequest, opts ...client.CallOption) (*EmptyResponse, error)
 	DeleteArticle(ctx context.Context, in *ArticleRequest, opts ...client.CallOption) (*EmptyResponse, error)
-	PushInBox(ctx context.Context, in *PushInBoxRequest, opts ...client.CallOption) (*EmptyResponse, error)
-	GetInBox(ctx context.Context, in *GetInBoxRequest, opts ...client.CallOption) (*GetInBoxResponse, error)
 }
 
 type articleServerService struct {
@@ -133,26 +131,6 @@ func (c *articleServerService) DeleteArticle(ctx context.Context, in *ArticleReq
 	return out, nil
 }
 
-func (c *articleServerService) PushInBox(ctx context.Context, in *PushInBoxRequest, opts ...client.CallOption) (*EmptyResponse, error) {
-	req := c.c.NewRequest(c.name, "ArticleServer.PushInBox", in)
-	out := new(EmptyResponse)
-	err := c.c.Call(ctx, req, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *articleServerService) GetInBox(ctx context.Context, in *GetInBoxRequest, opts ...client.CallOption) (*GetInBoxResponse, error) {
-	req := c.c.NewRequest(c.name, "ArticleServer.GetInBox", in)
-	out := new(GetInBoxResponse)
-	err := c.c.Call(ctx, req, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // Server API for ArticleServer service
 
 type ArticleServerHandler interface {
@@ -163,8 +141,6 @@ type ArticleServerHandler interface {
 	ChangeVisibleType(context.Context, *VisibleTypeRequest, *EmptyResponse) error
 	PublishArticle(context.Context, *PublishArticleRequest, *EmptyResponse) error
 	DeleteArticle(context.Context, *ArticleRequest, *EmptyResponse) error
-	PushInBox(context.Context, *PushInBoxRequest, *EmptyResponse) error
-	GetInBox(context.Context, *GetInBoxRequest, *GetInBoxResponse) error
 }
 
 func RegisterArticleServerHandler(s server.Server, hdlr ArticleServerHandler, opts ...server.HandlerOption) error {
@@ -176,8 +152,6 @@ func RegisterArticleServerHandler(s server.Server, hdlr ArticleServerHandler, op
 		ChangeVisibleType(ctx context.Context, in *VisibleTypeRequest, out *EmptyResponse) error
 		PublishArticle(ctx context.Context, in *PublishArticleRequest, out *EmptyResponse) error
 		DeleteArticle(ctx context.Context, in *ArticleRequest, out *EmptyResponse) error
-		PushInBox(ctx context.Context, in *PushInBoxRequest, out *EmptyResponse) error
-		GetInBox(ctx context.Context, in *GetInBoxRequest, out *GetInBoxResponse) error
 	}
 	type ArticleServer struct {
 		articleServer
@@ -216,12 +190,4 @@ func (h *articleServerHandler) PublishArticle(ctx context.Context, in *PublishAr
 
 func (h *articleServerHandler) DeleteArticle(ctx context.Context, in *ArticleRequest, out *EmptyResponse) error {
 	return h.ArticleServerHandler.DeleteArticle(ctx, in, out)
-}
-
-func (h *articleServerHandler) PushInBox(ctx context.Context, in *PushInBoxRequest, out *EmptyResponse) error {
-	return h.ArticleServerHandler.PushInBox(ctx, in, out)
-}
-
-func (h *articleServerHandler) GetInBox(ctx context.Context, in *GetInBoxRequest, out *GetInBoxResponse) error {
-	return h.ArticleServerHandler.GetInBox(ctx, in, out)
 }

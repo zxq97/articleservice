@@ -1,8 +1,6 @@
 package main
 
 import (
-	"articleservice/client/remind"
-	"articleservice/client/social"
 	"articleservice/conf"
 	"articleservice/global"
 	"articleservice/rpc/article/pb"
@@ -14,21 +12,11 @@ import (
 
 var (
 	articleConf *conf.Conf
-	remindConf  *conf.Conf
-	socialConf  *conf.Conf
 	err         error
 )
 
 func main() {
 	articleConf, err = conf.LoadYaml(conf.ArticleConfPath)
-	if err != nil {
-		panic(err)
-	}
-	remindConf, err = conf.LoadYaml(conf.RemindConfPath)
-	if err != nil {
-		panic(err)
-	}
-	socialConf, err = conf.LoadYaml(conf.SocialConfPath)
 	if err != nil {
 		panic(err)
 	}
@@ -45,9 +33,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	remind.InitClient(remindConf)
-	social.InitClient(socialConf)
 
 	err = server.InitService(articleConf)
 	if err != nil {
